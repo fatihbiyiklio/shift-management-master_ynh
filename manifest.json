@@ -1,0 +1,64 @@
+{
+    "name": "shift-management",
+    "id": "shiftmanagement",
+    "packaging_format": 1,
+    "description": {
+        "en": "Shift Management application for organizing work schedules",
+        "tr": "Vardiya yönetimi uygulaması"
+    },
+    "version": "1.0.0",
+    "url": "https://github.com/yourusername/shift-management",
+    "license": "free",
+    "maintainer": {
+        "name": "Your Name",
+        "email": "your.email@example.com"
+    },
+    "requirements": {
+        "yunohost": ">= 4.3.0"
+    },
+    "multi_instance": true,
+    "services": [
+        "nginx"
+    ],
+    "arguments": {
+        "install": [
+            {
+                "name": "domain",
+                "type": "domain",
+                "ask": {
+                    "en": "Choose a domain for Shift Management",
+                    "tr": "Vardiya Yönetimi için bir domain seçin"
+                },
+                "example": "domain.org"
+            },
+            {
+                "name": "path",
+                "type": "path",
+                "ask": {
+                    "en": "Choose a path for Shift Management",
+                    "tr": "Vardiya Yönetimi için bir yol seçin"
+                },
+                "example": "/shift",
+                "default": "/shift"
+            },
+            {
+                "name": "admin",
+                "type": "user",
+                "ask": {
+                    "en": "Choose an admin user",
+                    "tr": "Bir yönetici kullanıcı seçin"
+                },
+                "example": "johndoe"
+            },
+            {
+                "name": "is_public",
+                "type": "boolean",
+                "ask": {
+                    "en": "Is it a public application?",
+                    "tr": "Uygulama herkese açık olsun mu?"
+                },
+                "default": false
+            }
+        ]
+    }
+}
