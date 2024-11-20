@@ -1,0 +1,29 @@
+{
+  "shiftTypes": [
+    {
+      "id": 1,
+      "name": "Sabah",
+      "startTime": "09:30",
+      "endTime": "18:30"
+    },
+    {
+      "id": 2,
+      "name": "Akşam",
+      "startTime": "14:00",
+      "endTime": "23:00"
+    },
+    {
+      "id": 3,
+      "name": "Gece",
+      "startTime": "23:00",
+      "endTime": "08:00"
+    },
+    {
+      "id": 1732117529248,
+      "name": "Ara",
+      "startTime": "15:00",
+      "endTime": "00:00"
+    }
+  ],
+  "assignments": []
+}

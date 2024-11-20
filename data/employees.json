@@ -1,0 +1,47 @@
+[
+    {
+        "id": "1",
+        "fullName": "Ahmet Yılmaz",
+        "tcNo": "12345678901",
+        "phone": "0532-111-2233",
+        "email": "ahmet.yilmaz@example.com",
+        "department": "Müşteri Hizmetleri",
+        "address": "Kadıköy, İstanbul"
+    },
+    {
+        "id": "2",
+        "fullName": "Ayşe Demir",
+        "tcNo": "23456789012",
+        "phone": "0533-222-3344",
+        "email": "ayse.demir@example.com",
+        "department": "Teknik Destek",
+        "address": "Beşiktaş, İstanbul"
+    },
+    {
+        "id": "3",
+        "fullName": "Mehmet Kaya",
+        "tcNo": "34567890123",
+        "phone": "0535-333-4455",
+        "email": "mehmet.kaya@example.com",
+        "department": "Satış",
+        "address": "Şişli, İstanbul"
+    },
+    {
+        "id": "4",
+        "fullName": "Zeynep Şahin",
+        "tcNo": "45678901234",
+        "phone": "0536-444-5566",
+        "email": "zeynep.sahin@example.com",
+        "department": "Müşteri Hizmetleri",
+        "address": "Bakırköy, İstanbul"
+    },
+    {
+        "id": "5",
+        "fullName": "Can Öztürk",
+        "tcNo": "56789012345",
+        "phone": "0537-555-6677",
+        "email": "can.ozturk@example.com",
+        "department": "Teknik Destek",
+        "address": "Maltepe, İstanbul"
+    }
+]

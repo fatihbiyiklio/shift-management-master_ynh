@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vardiya Takvimi - Vardiya Yönetim Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .calendar-wrapper {
+            display: inline-block;
+            min-width: min-content;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .calendar {
+            border-collapse: collapse;
+            white-space: nowrap;
+            min-width: min-content;
+            width: auto;
+        }
+
+        .calendar th, .calendar td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            height: 40px;
+            font-size: 0.9rem;
+            min-width: 40px; /* Minimum hücre genişliği */
+        }
+
+        .calendar th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .calendar td {
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .calendar td:hover {
+            background-color: #f8f9fa;
+        }
+
+        .calendar .employee-name {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            cursor: default;
+            min-width: 150px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+        }
+
+        .calendar th.employee-name {
+            z-index: 3; /* En üstteki sol köşe hücresi için */
+        }
+
+        .shift-morning {
+            background-color: #e3f2fd !important;
+        }
+
+        .shift-evening {
+            background-color: #fff3e0 !important;
+        }
+
+        .shift-night {
+            background-color: #e8eaf6 !important;
+        }
+
+        .selected {
+            background-color: #e3f2fd;
+            border: 2px solid #2196f3 !important;
+        }
+
+        .today-column {
+            background-color: #e8f5e9 !important;
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            display: none;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 5px 0;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background-color: #ccc;
+            margin: 5px 0;
+        }
+
+        .container-fluid {
+            padding: 0 15px;
+        }
+
+        .table-responsive {
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        /* Vardiya renkleri için hover efekti */
+        .shift-morning:hover {
+            background-color: #b3e5fc !important;
+        }
+
+        .shift-evening:hover {
+            background-color: #ffe0b2 !important;
+        }
+
+        .shift-night:hover {
+            background-color: #c5cae9 !important;
+        }
+
+        .btn-today {
+            padding: 5px 15px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sağ Tık Menüsü -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item" onclick="editShift()">
+            <i class="fas fa-edit"></i> Vardiyayı Düzenle
+        </div>
+        <div class="context-menu-item" onclick="deleteShift()">
+            <i class="fas fa-trash"></i> Vardiyayı Sil
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="copyShift()">
+            <i class="fas fa-copy"></i> Vardiyayı Kopyala
+        </div>
+        <div class="context-menu-item" onclick="pasteShift()">
+            <i class="fas fa-paste"></i> Vardiyayı Yapıştır
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="pasteToSelected()">
+            <i class="fas fa-paste"></i> Seçili Hücrelere Yapıştır
+        </div>
+    </div>
+    <%- include('partials/navbar') %>
+    
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <!-- Vardiya Tanımları -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Vardiya Tanımları</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/shifts/types" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Vardiya Adı</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Başlangıç Saati</label>
+                                <input type="time" class="form-control" name="startTime" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bitiş Saati</label>
+                                <input type="time" class="form-control" name="endTime" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Vardiya Ekle</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Mevcut Vardiyalar -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Mevcut Vardiyalar</h5>
+                    </div>
+                    <div class="card-body">
+                        <% shifts.shiftTypes.forEach(function(shiftType) { %>
+                            <div class="mb-2 p-2 <%= shiftType.name.toLowerCase().includes('sabah') ? 'shift-morning' : 
+                                            shiftType.name.toLowerCase().includes('akşam') ? 'shift-evening' : 
+                                            'shift-night' %>">
+                                <strong><%= shiftType.name %></strong>
+                                <br>
+                                <%= shiftType.startTime %> - <%= shiftType.endTime %>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="d-flex align-items-center mb-3">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="previousMonth()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <select id="monthSelect" class="form-select mx-2" style="width: auto;" onchange="changeMonth(this.value)">
+                        <option value="0">Ocak</option>
+                        <option value="1">Şubat</option>
+                        <option value="2">Mart</option>
+                        <option value="3">Nisan</option>
+                        <option value="4">Mayıs</option>
+                        <option value="5">Haziran</option>
+                        <option value="6">Temmuz</option>
+                        <option value="7">Ağustos</option>
+                        <option value="8">Eylül</option>
+                        <option value="9">Ekim</option>
+                        <option value="10">Kasım</option>
+                        <option value="11">Aralık</option>
+                    </select>
+                    <select id="yearSelect" class="form-select me-2" style="width: auto;" onchange="changeYear(this.value)">
+                        <% for(let year = 2024; year <= 2030; year++) { %>
+                            <option value="<%= year %>"><%= year %></option>
+                        <% } %>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary btn-today" onclick="goToToday()">
+                        <i class="fas fa-calendar-day"></i> Bugün
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="nextMonth()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-sm btn-success ms-2" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Excel'e Aktar
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <div class="calendar-wrapper">
+                        <table id="calendar" class="calendar">
+                            <thead>
+                                <tr>
+                                    <th class="employee-name">Çalışan</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vardiya Atama Modal -->
+    <div class="modal fade" id="shiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Vardiya Ata</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="shiftForm">
+                        <div class="mb-3">
+                            <label class="form-label">Vardiya Seçin</label>
+                            <select id="shiftType" class="form-select" required>
+                                <option value="">Vardiya Seçin</option>
+                                <% shifts.shiftTypes.forEach(function(type) { %>
+                                    <option value="<%= type.id %>"><%= type.name %> (<%= type.startTime %> - <%= type.endTime %>)</option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" form="shiftForm" class="btn btn-primary">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentDate = new Date();
+        let employees = <%- JSON.stringify(employees) %>;
+        let shifts = <%- JSON.stringify(shifts) %>;
+        let currentShifts = {};
+        let copiedShift = null;
+        let contextMenuTarget = null;
+        let multiSelectStarted = false;
+        let selectedCells = [];
+
+        // CTRL tuşu kontrolü
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Control') {
+                multiSelectStarted = true;
+                document.querySelectorAll('td').forEach(cell => {
+                    if (!cell.classList.contains('employee-name')) {
+                        cell.addEventListener('click', selectCell);
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            if (e.key === 'Control') {
+                multiSelectStarted = false;
+                document.querySelectorAll('td').forEach(cell => {
+                    cell.removeEventListener('click', selectCell);
+                    cell.classList.remove('selected');
+                });
+                selectedCells = [];
+            }
+        });
+
+        // Sağ tık menüsü işlemleri
+        document.addEventListener('contextmenu', function(e) {
+            const cell = e.target.closest('td');
+            if (cell && !cell.classList.contains('employee-name')) {
+                e.preventDefault();
+                contextMenuTarget = cell;
+                const contextMenu = document.getElementById('contextMenu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = e.pageX + 'px';
+                contextMenu.style.top = e.pageY + 'px';
+
+                // Yapıştır butonunu sadece kopyalanmış vardiya varsa aktif et
+                const pasteButton = contextMenu.querySelector('[onclick="pasteShift()"]');
+                pasteButton.style.opacity = copiedShift ? '1' : '0.5';
+                pasteButton.style.cursor = copiedShift ? 'pointer' : 'not-allowed';
+
+                // Seçili hücrelere yapıştır butonunu sadece çoklu seçim modunda aktif et
+                const pasteToSelectedButton = contextMenu.querySelector('[onclick="pasteToSelected()"]');
+                pasteToSelectedButton.style.opacity = multiSelectStarted ? '1' : '0.5';
+                pasteToSelectedButton.style.cursor = multiSelectStarted ? 'pointer' : 'not-allowed';
+            }
+        });
+
+        // Menü dışına tıklandığında kapat
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.context-menu')) {
+                document.getElementById('contextMenu').style.display = 'none';
+            }
+        });
+
+        // Hücre seçimi
+        function selectCell(e) {
+            if (!multiSelectStarted) return;
+            
+            const cell = e.target.closest('td');
+            if (cell && !cell.classList.contains('employee-name')) {
+                if (selectedCells.includes(cell)) {
+                    selectedCells = selectedCells.filter(c => c !== cell);
+                    cell.classList.remove('selected');
+                } else {
+                    selectedCells.push(cell);
+                    cell.classList.add('selected');
+                }
+            }
+        }
+
+        // Vardiya düzenleme
+        function editShift() {
+            if (contextMenuTarget) {
+                const employeeId = contextMenuTarget.dataset.employeeId;
+                const date = contextMenuTarget.dataset.date;
+                document.getElementById('contextMenu').style.display = 'none';
+                showShiftModal(employeeId, date);
+            }
+        }
+
+        // Vardiya silme
+        async function deleteShift() {
+            if (contextMenuTarget) {
+                const employeeId = contextMenuTarget.dataset.employeeId;
+                const date = contextMenuTarget.dataset.date;
+                
+                if (confirm('Bu vardiyayı silmek istediğinizden emin misiniz?')) {
+                    try {
+                        const response = await fetch('/delete-shift', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ employeeId, date })
+                        });
+
+                        if (response.ok) {
+                            loadShifts();
+                            document.getElementById('contextMenu').style.display = 'none';
+                        } else {
+                            alert('Vardiya silinirken bir hata oluştu.');
+                        }
+                    } catch (error) {
+                        console.error('Vardiya silme hatası:', error);
+                        alert('Vardiya silinirken bir hata oluştu.');
+                    }
+                }
+            }
+        }
+
+        // Vardiya kopyalama
+        function copyShift() {
+            if (contextMenuTarget) {
+                const employeeId = contextMenuTarget.dataset.employeeId;
+                const date = contextMenuTarget.dataset.date;
+                const shift = currentShifts[date]?.[employeeId];
+                
+                if (shift) {
+                    copiedShift = { ...shift };
+                    document.getElementById('contextMenu').style.display = 'none';
+                }
+            }
+        }
+
+        // Vardiya yapıştırma
+        async function pasteShift() {
+            if (contextMenuTarget && copiedShift) {
+                const employeeId = contextMenuTarget.dataset.employeeId;
+                const date = contextMenuTarget.dataset.date;
+                
+                try {
+                    const response = await fetch('/assign-shift', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            employeeId,
+                            date,
+                            shiftTypeId: copiedShift.shiftTypeId
+                        })
+                    });
+
+                    if (response.ok) {
+                        loadShifts();
+                        document.getElementById('contextMenu').style.display = 'none';
+                    } else {
+                        alert('Vardiya yapıştırılırken bir hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Vardiya yapıştırma hatası:', error);
+                    alert('Vardiya yapıştırılırken bir hata oluştu.');
+                }
+            }
+        }
+
+        // Seçili hücrelere yapıştırma
+        async function pasteToSelected() {
+            if (multiSelectStarted && copiedShift) {
+                try {
+                    const responses = await Promise.all(selectedCells.map(cell => {
+                        const employeeId = cell.dataset.employeeId;
+                        const date = cell.dataset.date;
+                        return fetch('/assign-shift', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                employeeId,
+                                date,
+                                shiftTypeId: copiedShift.shiftTypeId
+                            })
+                        });
+                    }));
+
+                    if (responses.every(response => response.ok)) {
+                        loadShifts();
+                        document.getElementById('contextMenu').style.display = 'none';
+                    } else {
+                        alert('Vardiya yapıştırılırken bir hata oluştu.');
+                    }
+                } catch (error) {
+                    console.error('Vardiya yapıştırma hatası:', error);
+                    alert('Vardiya yapıştırılırken bir hata oluştu.');
+                }
+            }
+        }
+
+        // Vardiya renk sınıfları
+        const shiftColors = {
+            'Sabah': 'shift-morning',
+            'Akşam': 'shift-evening',
+            'Gece': 'shift-night'
+        };
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Ay ve yıl seçicilerini güncelle
+            document.getElementById('monthSelect').value = month;
+            document.getElementById('yearSelect').value = year;
+
+            const calendar = document.getElementById('calendar');
+            const tbody = calendar.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            // Çalışanları döngüye al
+            employees.forEach(employee => {
+                const row = document.createElement('tr');
+                
+                // İlk sütun - çalışan adı
+                const nameCell = document.createElement('td');
+                nameCell.textContent = employee.fullName;
+                nameCell.classList.add('employee-name');
+                row.appendChild(nameCell);
+
+                // Ayın günlerini döngüye al
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cell = document.createElement('td');
+                    
+                    // Hücre verilerini ekle
+                    const currentCellDate = new Date(year, month, day);
+                    const dateStr = currentCellDate.toISOString().split('T')[0];
+                    cell.dataset.date = dateStr;
+                    cell.dataset.employeeId = employee.id;
+
+                    // Bugünün hücresini işaretle
+                    const today = new Date();
+                    if (currentCellDate.toDateString() === today.toDateString()) {
+                        cell.classList.add('today-column');
+                    }
+
+                    // Vardiya varsa göster
+                    const shift = currentShifts[dateStr]?.[employee.id];
+                    if (shift) {
+                        const shiftType = shifts.shiftTypes.find(t => t.id === shift.shiftTypeId);
+                        if (shiftType) {
+                            const div = document.createElement('div');
+                            div.className = `${shiftColors[shiftType.name]}`;
+                            div.textContent = shiftType.name;
+                            cell.appendChild(div);
+                        }
+                    }
+
+                    // Tıklama olayını ekle
+                    cell.addEventListener('click', () => showShiftModal(employee.id, dateStr));
+                    
+                    row.appendChild(cell);
+                }
+                
+                tbody.appendChild(row);
+            });
+
+            // Başlık satırını güncelle
+            const headerRow = calendar.querySelector('thead tr');
+            headerRow.innerHTML = '<th>Çalışan</th>';
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const th = document.createElement('th');
+                const date = new Date(year, month, day);
+                const dayName = dayNames[date.getDay()];
+                th.textContent = `${day} ${dayName}`;
+                headerRow.appendChild(th);
+            }
+        }
+
+        // Vardiya atama modalını göster
+        function showShiftModal(employeeId, date) {
+            // Çoklu seçim modunda modalı açma
+            if (multiSelectStarted) {
+                return;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+            const form = document.getElementById('shiftForm');
+            
+            form.dataset.employeeId = employeeId;
+            form.dataset.date = date;
+            
+            // Mevcut vardiyayı seç
+            const shift = currentShifts[date]?.[employeeId];
+            if (shift) {
+                document.getElementById('shiftType').value = shift.shiftTypeId;
+            } else {
+                document.getElementById('shiftType').value = '';
+            }
+            
+            modal.show();
+        }
+
+        // Vardiya ata
+        document.getElementById('shiftForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const employeeId = this.dataset.employeeId;
+            const date = this.dataset.date;
+            const shiftTypeId = document.getElementById('shiftType').value;
+            
+            try {
+                const response = await fetch('/shifts/assignments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        employeeId,
+                        date,
+                        shiftTypeId: parseInt(shiftTypeId)
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('shiftModal')).hide();
+                    renderCalendar();
+                } else {
+                    alert(data.message || 'Vardiya ataması başarısız oldu');
+                }
+            } catch (error) {
+                console.error('Vardiya atama hatası:', error);
+                alert('Vardiya ataması sırasında bir hata oluştu');
+            }
+        });
+
+        // Ay ve yıl değişikliği
+        document.getElementById('monthSelect').addEventListener('change', function() {
+            currentDate.setMonth(parseInt(this.value));
+            renderCalendar();
+        });
+
+        document.getElementById('yearSelect').addEventListener('change', function() {
+            currentDate.setFullYear(parseInt(this.value));
+            renderCalendar();
+        });
+
+        // Vardiyaları yükle
+        async function loadShifts() {
+            try {
+                const shifts = <%- JSON.stringify(shifts) %>;
+                
+                // Vardiyaları çalışan ve tarihe göre düzenle
+                currentShifts = {};
+                shifts.assignments.forEach(shift => {
+                    if (!currentShifts[shift.date]) {
+                        currentShifts[shift.date] = {};
+                    }
+                    currentShifts[shift.date][shift.employeeId] = shift;
+                });
+                
+                renderCalendar();
+            } catch (error) {
+                console.error('Vardiya verileri yüklenirken hata:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            loadShifts();
+        });
+
+        function goToToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+        
+        function changeMonth(month) {
+            currentDate.setMonth(parseInt(month));
+            renderCalendar();
+        }
+        
+        function changeYear(year) {
+            currentDate.setFullYear(parseInt(year));
+            renderCalendar();
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        async function exportToExcel() {
+            try {
+                const year = document.getElementById('yearSelect').value;
+                const month = parseInt(document.getElementById('monthSelect').value) + 1;
+                
+                console.log('Exporting data for:', { year, month });
+                
+                const response = await fetch(`/shifts/export?year=${year}&month=${month}`);
+                const contentType = response.headers.get('content-type');
+                
+                console.log('Response status:', response.status);
+                console.log('Content type:', contentType);
+                
+                if (!response.ok) {
+                    let errorMessage = 'Export failed';
+                    try {
+                        if (contentType && contentType.includes('application/json')) {
+                            const errorData = await response.json();
+                            errorMessage = errorData.details || errorData.error || 'Export failed';
+                        } else {
+                            const text = await response.text();
+                            console.error('Server response:', text);
+                            errorMessage = 'Sunucu hatası oluştu';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                if (!contentType || !contentType.includes('spreadsheetml')) {
+                    console.error('Invalid content type:', contentType);
+                    throw new Error('Sunucudan geçersiz dosya formatı alındı');
+                }
+                
+                const blob = await response.blob();
+                if (blob.size === 0) {
+                    throw new Error('Boş dosya alındı');
+                }
+                
+                console.log('File received, size:', blob.size);
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Vardiya_Tablosu_${year}_${month}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log('Download initiated');
+            } catch (error) {
+                console.error('Excel export error:', error);
+                alert('Excel dosyası oluşturulurken bir hata oluştu: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
