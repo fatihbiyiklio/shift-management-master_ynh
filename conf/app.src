@@ -1,2 +1,3 @@
 SOURCE_URL=https://github.com/fatihbiyiklio/shift-management-master_ynh/archive/refs/heads/main.tar.gz
-SOURCE_SUM=
+SOURCE_SUM=58175750a894e09e32e2298e38409c8044b6764c1a335184480e1334b109f253
+SOURCE_SUM_PRG=sha256sum
