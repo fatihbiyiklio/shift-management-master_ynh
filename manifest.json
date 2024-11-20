@@ -7,11 +7,11 @@
         "tr": "Vardiya yönetimi uygulaması"
     },
     "version": "1.0.0",
-    "url": "https://github.com/yourusername/shift-management",
+    "url": "https://github.com/fatihbiyiklio/shift-management-master_ynh",
     "license": "free",
     "maintainer": {
-        "name": "Your Name",
-        "email": "your.email@example.com"
+        "name": "Fatih Biyikli",
+        "email": "fatihbiyikli@example.com"
     },
     "requirements": {
         "yunohost": ">= 4.3.0"
